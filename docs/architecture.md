@@ -98,3 +98,38 @@ debounce or encoder edge decoding specifically.
 
 This keeps the early simulator useful and small, while preserving room for
 lower-level RP2040, PIO, and GPIO simulation where it pays off.
+
+## Repository Layout
+
+```text
+firmware/
+  hal/
+    lcd_1in44.h              Shared display driver API.
+  synth_core/
+    synth_c_api.h            C ABI exported by the portable synth core.
+    synth_demo.cpp           Portable C++ demo that draws one LCD frame.
+  rp2040_backend/
+    main.cpp                 Pico SDK application placeholder.
+    lcd_1in44_rp2040.cpp     Real ST7735 backend placeholder.
+
+simulator/
+  desktop/
+    build.rs                 Compiles the portable C++ synth core for desktop.
+    src/lib.rs               Simulated hardware backend.
+    src/main.rs              Native window that shows the LCD framebuffer.
+```
+
+The current desktop flow is:
+
+1. Rust starts the simulator executable.
+2. Rust calls `synth_demo_render_frame()` from portable C++.
+3. C++ fills a `UWORD[128 * 128]` framebuffer.
+4. C++ calls `LCD_1IN44_Display(image)`.
+5. The Rust simulation backend captures that call.
+6. The desktop window displays the captured RGB565 framebuffer.
+
+Run it with:
+
+```sh
+cargo run -p pico_synth_desktop_sim
+```

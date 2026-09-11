@@ -1,0 +1,11 @@
+[package]
+name = "pico_synth_desktop_sim"
+version = "0.1.0"
+edition = "2024"
+build = "build.rs"
+
+[dependencies]
+minifb = "0.27"
+
+[build-dependencies]
+cc = "1"
