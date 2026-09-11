@@ -3,21 +3,14 @@
 
 #include <cstdlib>
 
-int main() {
+extern "C" int synth_simulator_main_once(void) {
     const UDOUBLE IMAGESIZE = LCD_1IN44_HEIGHT * LCD_1IN44_WIDTH * 2;
-    screen = (UWORD *)malloc(IMAGESIZE);
+    UWORD *screen = (UWORD *)malloc(IMAGESIZE);
 
     if (screen == nullptr) {
         return 1;
     }
 
-    // RP2040 Pico SDK initialization will live here:
-    // - clocks
-    // - PIO I2S audio
-    // - SPI ST7735 display
-    // - GPIO buttons and encoder
-    // - multicore launch
     synth_demo_render_frame(screen);
-
     return 0;
 }

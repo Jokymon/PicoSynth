@@ -4,12 +4,14 @@ use pico_synth_desktop_sim::{
 };
 
 unsafe extern "C" {
-    fn synth_demo_render_frame();
+    fn synth_simulator_main_once() -> i32;
 }
 
 fn main() -> Result<(), minifb::Error> {
-    unsafe {
-        synth_demo_render_frame();
+    let startup_result = unsafe { synth_simulator_main_once() };
+    if startup_result != 0 {
+        eprintln!("failed to initialize firmware screen buffer");
+        std::process::exit(startup_result);
     }
 
     let mut window = Window::new(

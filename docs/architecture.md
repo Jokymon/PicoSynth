@@ -115,6 +115,7 @@ firmware/
 simulator/
   desktop/
     build.rs                 Compiles the portable C++ synth core for desktop.
+    cpp/sim_main.cpp         Desktop startup shim for firmware-style setup.
     src/lib.rs               Simulated hardware backend.
     src/main.rs              Native window that shows the LCD framebuffer.
 ```
@@ -122,11 +123,18 @@ simulator/
 The current desktop flow is:
 
 1. Rust starts the simulator executable.
-2. Rust calls `synth_demo_render_frame()` from portable C++.
-3. C++ fills a `UWORD[128 * 128]` framebuffer.
-4. C++ calls `LCD_1IN44_Display(image)`.
-5. The Rust simulation backend captures that call.
-6. The desktop window displays the captured RGB565 framebuffer.
+2. Rust calls `synth_simulator_main_once()` from C++.
+3. C++ allocates the startup-owned `screen` buffer:
+
+   ```c
+   const UDOUBLE IMAGESIZE = LCD_1IN44_HEIGHT * LCD_1IN44_WIDTH * 2;
+   UWORD *screen = (UWORD *)malloc(IMAGESIZE);
+   ```
+
+4. C++ passes `screen` into the target-independent demo renderer.
+5. C++ calls `LCD_1IN44_Display(screen)`.
+6. The Rust simulation backend captures that call.
+7. The desktop window displays the captured RGB565 framebuffer.
 
 Run it with:
 

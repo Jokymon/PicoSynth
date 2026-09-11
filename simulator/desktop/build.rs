@@ -16,6 +16,7 @@ fn main() {
         "cargo:rerun-if-changed={}",
         firmware.join("hal/lcd_1in44.h").display()
     );
+    println!("cargo:rerun-if-changed=cpp/sim_main.cpp");
 
     cc::Build::new()
         .cpp(true)
@@ -23,5 +24,6 @@ fn main() {
         .include(firmware.join("hal"))
         .include(firmware.join("synth_core"))
         .file(firmware.join("synth_core/synth_demo.cpp"))
+        .file("cpp/sim_main.cpp")
         .compile("synth_core");
 }

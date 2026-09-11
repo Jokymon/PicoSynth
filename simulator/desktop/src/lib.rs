@@ -212,6 +212,16 @@ pub extern "C" fn LCD_1IN44_Display(image: *const u16) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Mutex, OnceLock};
+
+    static TEST_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+    fn test_lock() -> std::sync::MutexGuard<'static, ()> {
+        TEST_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .expect("test mutex poisoned")
+    }
 
     #[test]
     fn buffered_audio_keeps_sample_order() {
@@ -232,6 +242,7 @@ mod tests {
 
     #[test]
     fn lcd_display_copies_rgb565_framebuffer() {
+        let _lock = test_lock();
         reset_lcd();
         let mut image = [0_u16; DISPLAY_PIXELS];
         image[0] = 0xf800;
@@ -249,6 +260,7 @@ mod tests {
 
     #[test]
     fn lcd_display_ignores_null_pointer() {
+        let _lock = test_lock();
         reset_lcd();
 
         LCD_1IN44_Display(std::ptr::null());

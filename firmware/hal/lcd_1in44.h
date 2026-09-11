@@ -8,6 +8,10 @@ extern "C" {
 #endif
 
 typedef uint16_t UWORD;
+typedef uint32_t UDOUBLE;
+
+#define LCD_1IN44_HEIGHT 128
+#define LCD_1IN44_WIDTH 128
 
 void LCD_1IN44_Display(UWORD *Image);
 
