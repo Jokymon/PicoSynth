@@ -11,6 +11,6 @@ extern "C" int synth_simulator_main_once(void) {
         return 1;
     }
 
-    synth_demo_render_frame(screen);
+    synth_app_start(screen);
     return 0;
 }

@@ -107,7 +107,9 @@ firmware/
     lcd_1in44.h              Shared display driver API.
   synth_core/
     synth_c_api.h            C ABI exported by the portable synth core.
-    synth_demo.cpp           Portable C++ demo that draws one LCD frame.
+    synth_app.c              Shared startup drawing code.
+    GUI_Paint.c/.h           Target-independent drawing library.
+    Fonts/                   Font tables used by GUI_Paint.
   rp2040_backend/
     main.cpp                 Pico SDK application placeholder.
     lcd_1in44_rp2040.cpp     Real ST7735 backend placeholder.
@@ -120,21 +122,21 @@ simulator/
     src/main.rs              Native window that shows the LCD framebuffer.
 ```
 
-The current desktop flow is:
+The current startup/display flow is:
 
-1. Rust starts the simulator executable.
-2. Rust calls `synth_simulator_main_once()` from C++.
-3. C++ allocates the startup-owned `screen` buffer:
+1. A backend allocates the startup-owned `screen` buffer:
 
    ```c
    const UDOUBLE IMAGESIZE = LCD_1IN44_HEIGHT * LCD_1IN44_WIDTH * 2;
    UWORD *screen = (UWORD *)malloc(IMAGESIZE);
    ```
 
-4. C++ passes `screen` into the target-independent demo renderer.
-5. C++ calls `LCD_1IN44_Display(screen)`.
-6. The Rust simulation backend captures that call.
-7. The desktop window displays the captured RGB565 framebuffer.
+2. The backend passes `screen` into `synth_app_start(screen)`.
+3. Shared C code initializes the Paint library on that buffer.
+4. Shared C code clears the display and draws text.
+5. Shared C code calls `LCD_1IN44_Display(screen)`.
+6. The RP2040 backend will send the buffer to the real ST7735.
+7. The desktop simulator backend captures the buffer and displays it in a window.
 
 Run it with:
 

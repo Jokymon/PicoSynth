@@ -1,0 +1,6 @@
+#include "lcd_1in44.h"
+
+const LCD_1IN44_ATTRIBUTES LCD_1IN44 = {
+    LCD_1IN44_WIDTH,
+    LCD_1IN44_HEIGHT,
+};

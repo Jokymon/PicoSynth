@@ -170,6 +170,20 @@ pub fn lcd_framebuffer_snapshot() -> [Rgb565; DISPLAY_PIXELS] {
     lcd().lock().expect("simulated LCD mutex poisoned").pixels
 }
 
+pub fn lcd_window_frame_snapshot() -> [u32; DISPLAY_PIXELS] {
+    let pixels = lcd_framebuffer_snapshot();
+    let mut frame = [0_u32; DISPLAY_PIXELS];
+
+    for y in 0..DISPLAY_HEIGHT {
+        for x in 0..DISPLAY_WIDTH {
+            let source = pixels[(DISPLAY_HEIGHT - 1 - x) * DISPLAY_WIDTH + y];
+            frame[y * DISPLAY_WIDTH + x] = source.to_xrgb8888();
+        }
+    }
+
+    frame
+}
+
 pub fn lcd_flush_count() -> u64 {
     lcd()
         .lock()
@@ -199,11 +213,11 @@ pub extern "C" fn LCD_1IN44_Display(image: *const u16) {
         return;
     }
 
-    let image = unsafe { std::slice::from_raw_parts(image, DISPLAY_PIXELS) };
+    let image = unsafe { std::slice::from_raw_parts(image.cast::<u8>(), DISPLAY_PIXELS * 2) };
     let mut lcd = lcd().lock().expect("simulated LCD mutex poisoned");
 
-    for (target, source) in lcd.pixels.iter_mut().zip(image.iter()) {
-        *target = Rgb565(*source);
+    for (target, source) in lcd.pixels.iter_mut().zip(image.chunks_exact(2)) {
+        *target = Rgb565(u16::from_be_bytes([source[0], source[1]]));
     }
 
     lcd.flush();
@@ -244,12 +258,14 @@ mod tests {
     fn lcd_display_copies_rgb565_framebuffer() {
         let _lock = test_lock();
         reset_lcd();
-        let mut image = [0_u16; DISPLAY_PIXELS];
-        image[0] = 0xf800;
-        image[DISPLAY_WIDTH + 1] = 0x07e0;
-        image[DISPLAY_PIXELS - 1] = 0x001f;
+        let mut image = [0_u8; DISPLAY_PIXELS * 2];
+        image[0..2].copy_from_slice(&0xf800_u16.to_be_bytes());
+        let green = (DISPLAY_WIDTH + 1) * 2;
+        image[green..green + 2].copy_from_slice(&0x07e0_u16.to_be_bytes());
+        let blue = (DISPLAY_PIXELS - 1) * 2;
+        image[blue..blue + 2].copy_from_slice(&0x001f_u16.to_be_bytes());
 
-        LCD_1IN44_Display(image.as_mut_ptr());
+        LCD_1IN44_Display(image.as_mut_ptr().cast::<u16>());
 
         let snapshot = lcd_framebuffer_snapshot();
         assert_eq!(snapshot[0], Rgb565(0xf800));
@@ -267,5 +283,45 @@ mod tests {
 
         assert_eq!(lcd_framebuffer_snapshot(), [Rgb565(0); DISPLAY_PIXELS]);
         assert_eq!(lcd_flush_count(), 0);
+    }
+
+    #[test]
+    fn simulator_startup_draws_text_frame() {
+        unsafe extern "C" {
+            fn synth_simulator_main_once() -> i32;
+        }
+
+        let _lock = test_lock();
+        reset_lcd();
+
+        let result = unsafe { synth_simulator_main_once() };
+
+        assert_eq!(result, 0);
+        assert_eq!(lcd_flush_count(), 1);
+        assert!(
+            lcd_framebuffer_snapshot()
+                .iter()
+                .any(|pixel| *pixel == Rgb565(0xffff))
+        );
+    }
+
+    #[test]
+    fn lcd_window_frame_rotates_raw_framebuffer_clockwise() {
+        let _lock = test_lock();
+        reset_lcd();
+
+        let mut image = [0_u8; DISPLAY_PIXELS * 2];
+        image[0..2].copy_from_slice(&0xf800_u16.to_be_bytes());
+        let top_right = (DISPLAY_WIDTH - 1) * 2;
+        image[top_right..top_right + 2].copy_from_slice(&0x07e0_u16.to_be_bytes());
+        let bottom_left = (DISPLAY_PIXELS - DISPLAY_WIDTH) * 2;
+        image[bottom_left..bottom_left + 2].copy_from_slice(&0x001f_u16.to_be_bytes());
+
+        LCD_1IN44_Display(image.as_mut_ptr().cast::<u16>());
+
+        let frame = lcd_window_frame_snapshot();
+        assert_eq!(frame[DISPLAY_WIDTH - 1], Rgb565(0xf800).to_xrgb8888());
+        assert_eq!(frame[DISPLAY_PIXELS - 1], Rgb565(0x07e0).to_xrgb8888());
+        assert_eq!(frame[0], Rgb565(0x001f).to_xrgb8888());
     }
 }

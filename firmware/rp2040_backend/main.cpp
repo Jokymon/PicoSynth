@@ -17,7 +17,7 @@ int main() {
     // - SPI ST7735 display
     // - GPIO buttons and encoder
     // - multicore launch
-    synth_demo_render_frame(screen);
+    synth_app_start(screen);
 
     return 0;
 }

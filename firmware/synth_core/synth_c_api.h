@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-void synth_demo_render_frame(UWORD *screen);
+void synth_app_start(UWORD *screen);
 
 #ifdef __cplusplus
 }

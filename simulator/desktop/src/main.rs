@@ -1,7 +1,5 @@
 use minifb::{Key, Scale, Window, WindowOptions};
-use pico_synth_desktop_sim::{
-    DISPLAY_HEIGHT, DISPLAY_PIXELS, DISPLAY_WIDTH, lcd_framebuffer_snapshot,
-};
+use pico_synth_desktop_sim::{DISPLAY_HEIGHT, DISPLAY_WIDTH, lcd_window_frame_snapshot};
 
 unsafe extern "C" {
     fn synth_simulator_main_once() -> i32;
@@ -24,14 +22,8 @@ fn main() -> Result<(), minifb::Error> {
         },
     )?;
 
-    let mut frame = [0_u32; DISPLAY_PIXELS];
-
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        let pixels = lcd_framebuffer_snapshot();
-        for (target, source) in frame.iter_mut().zip(pixels.iter()) {
-            *target = source.to_xrgb8888();
-        }
-
+        let frame = lcd_window_frame_snapshot();
         window.update_with_buffer(&frame, DISPLAY_WIDTH, DISPLAY_HEIGHT)?;
     }
 
