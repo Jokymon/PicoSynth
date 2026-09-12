@@ -1,3 +1,5 @@
+mod audio;
+
 use minifb::{Key, KeyRepeat, Scale, Window, WindowOptions};
 use pico_synth_desktop_sim::{
     DISPLAY_HEIGHT, DISPLAY_WIDTH, HW_KEY_BUTTON_1, HW_KEY_BUTTON_2, HW_KEY_BUTTON_3,
@@ -16,6 +18,7 @@ fn main() -> Result<(), minifb::Error> {
         eprintln!("failed to initialize firmware screen buffer");
         std::process::exit(startup_result);
     }
+    audio::start_audio_thread();
 
     let mut window = Window::new(
         "PicoSynthSim - LCD 1.44\"",

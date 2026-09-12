@@ -4,9 +4,10 @@ fn main() {
     let root = PathBuf::from("../..");
     let firmware = root.join("firmware");
 
+    println!("cargo:rustc-link-lib=winmm");
     println!(
         "cargo:rerun-if-changed={}",
-        firmware.join("synth_core/synth_app.c").display()
+        firmware.join("synth_core/synth_app.cpp").display()
     );
     println!(
         "cargo:rerun-if-changed={}",
@@ -23,6 +24,34 @@ fn main() {
     println!(
         "cargo:rerun-if-changed={}",
         firmware.join("synth_core/hardware.h").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        firmware.join("synth_core/gui.cpp").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        firmware.join("synth_core/gui.h").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        firmware.join("synth_core/synthesizer.cpp").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        firmware.join("synth_core/synthesizer.h").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        firmware.join("synth_core/voice.cpp").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        firmware.join("synth_core/voice.h").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
+        firmware.join("synth_core/midi.h").display()
     );
     println!(
         "cargo:rerun-if-changed={}",
@@ -57,7 +86,10 @@ fn main() {
         .include(firmware.join("synth_core"))
         .include(firmware.join("synth_core/Fonts"))
         .file(firmware.join("hal/lcd_1in44.c"))
-        .file(firmware.join("synth_core/synth_app.c"))
+        .file(firmware.join("synth_core/synth_app.cpp"))
+        .file(firmware.join("synth_core/gui.cpp"))
+        .file(firmware.join("synth_core/synthesizer.cpp"))
+        .file(firmware.join("synth_core/voice.cpp"))
         .file(firmware.join("synth_core/GUI_Paint.c"))
         .file(firmware.join("synth_core/Fonts/font12.c"))
         .file("cpp/sim_main.cpp")

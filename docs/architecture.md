@@ -108,7 +108,11 @@ firmware/
   synth_core/
     synth_c_api.h            C ABI exported by the portable synth core.
     hardware.h               Target-independent input event API.
-    synth_app.c              Shared startup drawing code.
+    synth_app.cpp            Shared application startup and loop.
+    synthesizer.cpp/.h       Portable note/message/audio rendering engine.
+    voice.cpp/.h             Per-voice oscillator and envelope logic.
+    gui.cpp/.h               Imported button/page UI logic.
+    midi.h                   MIDI note names and frequencies.
     GUI_Paint.c/.h           Target-independent drawing library.
     Fonts/                   Font tables used by GUI_Paint.
   rp2040_backend/
@@ -148,6 +152,22 @@ The current input flow is:
 4. `synth_app_loop()` polls one event with `get_event()`.
 5. The desktop backend maps `1`-`4` to buttons, `Enter` to the rotary switch,
    and the mouse wheel to rotary movement.
+
+The current audio flow is:
+
+1. Shared C++ code calls `Audio::Synthesizer::start()` during app startup.
+2. UI events call `Audio::Synthesizer::note_on()` and `note_off()`.
+3. The portable synthesizer stores those note messages in an internal queue.
+4. The desktop simulator starts a host audio thread.
+5. That audio thread repeatedly calls `synth_audio_render_interleaved_i16()`.
+6. The render function drains queued note messages and fills stereo `i16`
+   samples.
+7. On Windows, the simulator sends those samples to the system audio device via
+   `waveOut`.
+
+This models the RP2040 two-core split at the behavioral level: the UI loop and
+audio generation run independently, communicate through a message queue, and the
+audio side owns continuous sample rendering.
 
 Run it with:
 

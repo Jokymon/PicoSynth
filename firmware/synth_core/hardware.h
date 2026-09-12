@@ -5,6 +5,19 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
+enum class KeyId {
+    ROT_SWITCH,
+    KEY0,
+    KEY1,
+    KEY2,
+    KEY3,
+};
+
+enum class RotaryDir {
+    CW,
+    CCW,
+};
+
 extern "C" {
 #endif
 
