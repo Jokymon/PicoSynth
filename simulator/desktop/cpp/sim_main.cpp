@@ -3,9 +3,15 @@
 
 #include <cstdlib>
 
+namespace {
+
+UWORD *screen = nullptr;
+
+} // namespace
+
 extern "C" int synth_simulator_main_once(void) {
     const UDOUBLE IMAGESIZE = LCD_1IN44_HEIGHT * LCD_1IN44_WIDTH * 2;
-    UWORD *screen = (UWORD *)malloc(IMAGESIZE);
+    screen = (UWORD *)malloc(IMAGESIZE);
 
     if (screen == nullptr) {
         return 1;
@@ -13,4 +19,8 @@ extern "C" int synth_simulator_main_once(void) {
 
     synth_app_start(screen);
     return 0;
+}
+
+extern "C" void synth_simulator_loop_once(void) {
+    synth_app_loop(screen);
 }

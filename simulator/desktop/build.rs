@@ -22,6 +22,10 @@ fn main() {
     );
     println!(
         "cargo:rerun-if-changed={}",
+        firmware.join("synth_core/hardware.h").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
         firmware.join("hal/lcd_1in44.h").display()
     );
     println!(

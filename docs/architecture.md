@@ -107,12 +107,14 @@ firmware/
     lcd_1in44.h              Shared display driver API.
   synth_core/
     synth_c_api.h            C ABI exported by the portable synth core.
+    hardware.h               Target-independent input event API.
     synth_app.c              Shared startup drawing code.
     GUI_Paint.c/.h           Target-independent drawing library.
     Fonts/                   Font tables used by GUI_Paint.
   rp2040_backend/
     main.cpp                 Pico SDK application placeholder.
     lcd_1in44_rp2040.cpp     Real ST7735 backend placeholder.
+    hardware_rp2040.cpp      GPIO/rotary event implementation.
 
 simulator/
   desktop/
@@ -137,6 +139,15 @@ The current startup/display flow is:
 5. Shared C code calls `LCD_1IN44_Display(screen)`.
 6. The RP2040 backend will send the buffer to the real ST7735.
 7. The desktop simulator backend captures the buffer and displays it in a window.
+
+The current input flow is:
+
+1. Shared C code calls `init_hardware()` from `synth_app_start(screen)`.
+2. Each backend provides `init_hardware()` and `get_event(hw_event_t *event)`.
+3. Shared C code calls `synth_app_loop(screen)` repeatedly.
+4. `synth_app_loop()` polls one event with `get_event()`.
+5. The desktop backend maps `1`-`4` to buttons, `Enter` to the rotary switch,
+   and the mouse wheel to rotary movement.
 
 Run it with:
 

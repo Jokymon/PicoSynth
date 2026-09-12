@@ -19,5 +19,9 @@ int main() {
     // - multicore launch
     synth_app_start(screen);
 
+    while (true) {
+        synth_app_loop(screen);
+    }
+
     return 0;
 }

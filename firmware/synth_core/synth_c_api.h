@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 void synth_app_start(UWORD *screen);
+void synth_app_loop(UWORD *screen);
 
 #ifdef __cplusplus
 }

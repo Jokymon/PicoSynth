@@ -1,11 +1,28 @@
 //! Desktop simulation backend for the RP2040 synthesizer firmware.
 
+use std::collections::VecDeque;
+use std::ffi::c_int;
 use std::sync::{Mutex, OnceLock};
 
 pub const DISPLAY_WIDTH: usize = 128;
 pub const DISPLAY_HEIGHT: usize = 128;
 pub const DISPLAY_PIXELS: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT;
 pub const DEFAULT_SAMPLE_RATE_HZ: u32 = 44_100;
+
+pub const HW_KEY_ROTARY_SWITCH: c_int = 0;
+pub const HW_KEY_BUTTON_1: c_int = 1;
+pub const HW_KEY_BUTTON_2: c_int = 2;
+pub const HW_KEY_BUTTON_3: c_int = 3;
+pub const HW_KEY_BUTTON_4: c_int = 4;
+
+pub const HW_ROTARY_CW: c_int = 0;
+pub const HW_ROTARY_CCW: c_int = 1;
+
+pub const HW_KEY_RELEASED: c_int = 0;
+pub const HW_KEY_PRESSED: c_int = 1;
+
+pub const HW_EVENT_ROTATION: c_int = 0;
+pub const HW_EVENT_KEY: c_int = 1;
 
 /// A signed stereo audio frame after the synthesizer has produced a sample.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -49,6 +66,53 @@ pub enum InputEvent {
     Pressed(Control),
     Released(Control),
     EncoderDelta(i32),
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct HwRotationEvent {
+    pub direction: c_int,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct HwKeyEvent {
+    pub key: c_int,
+    pub state: c_int,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub union HwEventData {
+    pub rotation: HwRotationEvent,
+    pub key: HwKeyEvent,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct HwEvent {
+    pub event_type: c_int,
+    pub data: HwEventData,
+}
+
+impl HwEvent {
+    pub fn key(key: c_int, state: c_int) -> Self {
+        Self {
+            event_type: HW_EVENT_KEY,
+            data: HwEventData {
+                key: HwKeyEvent { key, state },
+            },
+        }
+    }
+
+    pub fn rotation(direction: c_int) -> Self {
+        Self {
+            event_type: HW_EVENT_ROTATION,
+            data: HwEventData {
+                rotation: HwRotationEvent { direction },
+            },
+        }
+    }
 }
 
 /// Host-side sink for generated audio.
@@ -160,9 +224,14 @@ impl Display for SimulatedLcd {
 }
 
 static LCD: OnceLock<Mutex<SimulatedLcd>> = OnceLock::new();
+static EVENTS: OnceLock<Mutex<VecDeque<HwEvent>>> = OnceLock::new();
 
 fn lcd() -> &'static Mutex<SimulatedLcd> {
     LCD.get_or_init(|| Mutex::new(SimulatedLcd::new()))
+}
+
+fn events() -> &'static Mutex<VecDeque<HwEvent>> {
+    EVENTS.get_or_init(|| Mutex::new(VecDeque::new()))
 }
 
 /// Returns a copy of the current simulated LCD framebuffer.
@@ -194,6 +263,58 @@ pub fn lcd_flush_count() -> u64 {
 /// Resets the simulated LCD framebuffer to black.
 pub fn reset_lcd() {
     *lcd().lock().expect("simulated LCD mutex poisoned") = SimulatedLcd::new();
+}
+
+pub fn push_key_event(key: c_int, state: c_int) {
+    events()
+        .lock()
+        .expect("simulator event queue mutex poisoned")
+        .push_back(HwEvent::key(key, state));
+}
+
+pub fn push_rotation_event(direction: c_int) {
+    events()
+        .lock()
+        .expect("simulator event queue mutex poisoned")
+        .push_back(HwEvent::rotation(direction));
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn init_hardware() {
+    events()
+        .lock()
+        .expect("simulator event queue mutex poisoned")
+        .clear();
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn get_event(event: *mut HwEvent) -> bool {
+    if event.is_null() {
+        return false;
+    }
+
+    let Some(next_event) = events()
+        .lock()
+        .expect("simulator event queue mutex poisoned")
+        .pop_front()
+    else {
+        return false;
+    };
+
+    unsafe {
+        *event = next_event;
+    }
+    true
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn synth_simulator_push_key_event(key: c_int, state: c_int) {
+    push_key_event(key, state);
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn synth_simulator_push_rotation_event(direction: c_int) {
+    push_rotation_event(direction);
 }
 
 /// Firmware-compatible display entry point.
@@ -272,6 +393,32 @@ mod tests {
         assert_eq!(snapshot[DISPLAY_WIDTH + 1], Rgb565(0x07e0));
         assert_eq!(snapshot[DISPLAY_PIXELS - 1], Rgb565(0x001f));
         assert_eq!(lcd_flush_count(), 1);
+    }
+
+    #[test]
+    fn simulator_event_queue_returns_events_in_order() {
+        let _lock = test_lock();
+        init_hardware();
+
+        push_key_event(HW_KEY_BUTTON_1, HW_KEY_PRESSED);
+        push_rotation_event(HW_ROTARY_CW);
+
+        let mut event = HwEvent::key(0, 0);
+
+        assert!(get_event(&mut event));
+        assert_eq!(event.event_type, HW_EVENT_KEY);
+        unsafe {
+            assert_eq!(event.data.key.key, HW_KEY_BUTTON_1);
+            assert_eq!(event.data.key.state, HW_KEY_PRESSED);
+        }
+
+        assert!(get_event(&mut event));
+        assert_eq!(event.event_type, HW_EVENT_ROTATION);
+        unsafe {
+            assert_eq!(event.data.rotation.direction, HW_ROTARY_CW);
+        }
+
+        assert!(!get_event(&mut event));
     }
 
     #[test]
