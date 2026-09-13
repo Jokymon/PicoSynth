@@ -75,7 +75,7 @@ int16_t next_mono_sample() {
 
     int32_t mixed = 0;
     for (Voice *voice : voices) {
-        mixed += static_cast<int16_t>(voice->sample() & 0xffff) / 2;
+        mixed += voice->sample() / 2;
     }
 
     if (mixed > INT16_MAX) {
@@ -126,6 +126,17 @@ void render_interleaved_i16(int16_t *samples, size_t frame_count) {
     }
 }
 
+void render_packed_i2s16(uint32_t *samples, size_t frame_count) {
+    if (samples == nullptr) {
+        return;
+    }
+
+    for (size_t i = 0; i < frame_count; i++) {
+        uint16_t sample_bits = static_cast<uint16_t>(next_mono_sample());
+        samples[i] = (static_cast<uint32_t>(sample_bits) << 16) | sample_bits;
+    }
+}
+
 } // namespace Synthesizer
 } // namespace Audio
 
@@ -146,4 +157,9 @@ extern "C" void synth_audio_note_off(uint8_t channel, uint8_t note,
 extern "C" void synth_audio_render_interleaved_i16(int16_t *samples,
                                                    size_t frame_count) {
     Audio::Synthesizer::render_interleaved_i16(samples, frame_count);
+}
+
+extern "C" void synth_audio_render_packed_i2s16(uint32_t *samples,
+                                                size_t frame_count) {
+    Audio::Synthesizer::render_packed_i2s16(samples, frame_count);
 }

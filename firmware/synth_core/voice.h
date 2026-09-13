@@ -34,7 +34,7 @@ public:
     }
 
     // Get the next audio sample for the initially configured sample frequency
-    uint32_t sample();
+    int16_t sample();
 
 private:
     enum State

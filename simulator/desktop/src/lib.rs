@@ -444,6 +444,56 @@ mod tests {
     }
 
     #[test]
+    fn synth_audio_attack_preserves_signed_waveform() {
+        unsafe extern "C" {
+            fn synth_audio_start();
+            fn synth_audio_note_on(channel: u8, note: u8, velocity: u8);
+            fn synth_audio_note_off(channel: u8, note: u8, velocity: u8);
+            fn synth_audio_render_interleaved_i16(samples: *mut i16, frame_count: usize);
+        }
+
+        let _lock = test_lock();
+        let mut samples = [0_i16; 2048 * 2];
+
+        unsafe {
+            synth_audio_start();
+            synth_audio_note_on(0, 69, 64);
+            synth_audio_render_interleaved_i16(samples.as_mut_ptr(), 2048);
+            synth_audio_note_off(0, 69, 64);
+        }
+
+        let left_channel = samples.iter().step_by(2);
+        assert!(left_channel.clone().any(|sample| *sample > 0));
+        assert!(left_channel.clone().any(|sample| *sample < 0));
+    }
+
+    #[test]
+    fn packed_i2s_render_preserves_twos_complement_sample_bits() {
+        unsafe extern "C" {
+            fn synth_audio_start();
+            fn synth_audio_note_on(channel: u8, note: u8, velocity: u8);
+            fn synth_audio_note_off(channel: u8, note: u8, velocity: u8);
+            fn synth_audio_render_packed_i2s16(samples: *mut u32, frame_count: usize);
+        }
+
+        let _lock = test_lock();
+        let mut packed_samples = [0_u32; 4096];
+
+        unsafe {
+            synth_audio_start();
+            synth_audio_note_on(0, 69, 64);
+            synth_audio_render_packed_i2s16(packed_samples.as_mut_ptr(), 4096);
+            synth_audio_note_off(0, 69, 64);
+        }
+
+        assert!(packed_samples.iter().any(|word| {
+            let left = (word >> 16) as u16;
+            let right = *word as u16;
+            left == right && (left & 0x8000) != 0
+        }));
+    }
+
+    #[test]
     fn lcd_display_ignores_null_pointer() {
         let _lock = test_lock();
         reset_lcd();

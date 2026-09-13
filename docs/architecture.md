@@ -165,6 +165,18 @@ The current audio flow is:
 7. On Windows, the simulator sends those samples to the system audio device via
    `waveOut`.
 
+The synth core treats audio as signed 16-bit PCM. That matches the PCM510xA I2S
+requirement for binary two's-complement audio data. The RP2040/PIO boundary can
+pack those signed samples into `uint32_t` FIFO words with the same 16-bit sample
+bit pattern in both channels:
+
+```c
+sample_word = (left_bits << 16) | right_bits;
+```
+
+This packed word may look "unsigned" in C because it is carried by `uint32_t`,
+but the DAC interprets the transmitted sample bits as two's-complement PCM.
+
 This models the RP2040 two-core split at the behavioral level: the UI loop and
 audio generation run independently, communicate through a message queue, and the
 audio side owns continuous sample rendering.

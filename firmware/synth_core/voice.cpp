@@ -29,7 +29,7 @@ void Voice::set_frequency(uint32_t frequency_hz)
     sample_increment = calculate_sample_increment(frequency_hz, sample_frequency_hz);
 }
 
-uint32_t Voice::sample()
+int16_t Voice::sample()
 {
     current_index += sample_increment;
     if (current_index > 256.0)
@@ -49,7 +49,9 @@ uint32_t Voice::sample()
                 }
                 break;
         }
-        return (uint32_t)((double)(sine_samples[(size_t)current_index] & 0xffff) * hull_value);
+        return static_cast<int16_t>(
+            static_cast<double>(sine_samples[(size_t)current_index]) *
+            hull_value);
     }
     else
     {
