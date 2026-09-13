@@ -42,10 +42,23 @@ int16_t Voice::sample()
         switch (state) {
             case Voice::Attack:
                 hull_value += 1/(attack * sample_frequency_hz);
-                // printf("%1.4f\n", hull_value);
                 if (hull_value>=1.0) {
                     hull_value = 1.0;
+                    state = Voice::Decay;
+                }
+                break;
+            case Voice::Decay:
+                hull_value -= 1/(decay * sample_frequency_hz);
+                if (hull_value<=sustain) {
+                    hull_value = sustain;
                     state = Voice::Sustain;
+                }
+                break;
+            case Voice::Release:
+                hull_value -= 1/(release * sample_frequency_hz);
+                if (hull_value<=0.0) {
+                    hull_value = 0.0;
+                    state = Voice::Off;
                 }
                 break;
         }

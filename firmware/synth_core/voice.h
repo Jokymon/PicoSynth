@@ -28,8 +28,7 @@ public:
         }
         else
         {
-            hull_value = 0.0;
-            state = Voice::Off;
+            state = Voice::Release;
         }
     }
 
