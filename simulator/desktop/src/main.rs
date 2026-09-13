@@ -1,6 +1,6 @@
 mod audio;
 
-use minifb::{Key, KeyRepeat, Scale, Window, WindowOptions};
+use minifb::{Key, KeyRepeat, MouseButton, Scale, Window, WindowOptions};
 use pico_synth_desktop_sim::{
     DISPLAY_HEIGHT, DISPLAY_WIDTH, HW_KEY_BUTTON_1, HW_KEY_BUTTON_2, HW_KEY_BUTTON_3,
     HW_KEY_BUTTON_4, HW_KEY_PRESSED, HW_KEY_RELEASED, HW_KEY_ROTARY_SWITCH, HW_ROTARY_CCW,
@@ -29,9 +29,10 @@ fn main() -> Result<(), minifb::Error> {
             ..WindowOptions::default()
         },
     )?;
+    let mut input_state = InputState::default();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        poll_window_input(&window);
+        poll_window_input(&window, &mut input_state);
         unsafe {
             synth_simulator_loop_once();
         }
@@ -43,10 +44,17 @@ fn main() -> Result<(), minifb::Error> {
     Ok(())
 }
 
-fn poll_window_input(window: &Window) {
+#[derive(Default)]
+struct InputState {
+    middle_mouse_down: bool,
+}
+
+fn poll_window_input(window: &Window, state: &mut InputState) {
     for key in window.get_keys_pressed(KeyRepeat::No) {
         if let Some(button) = map_button_key(key) {
             push_key_event(button, HW_KEY_PRESSED);
+        } else if let Some(direction) = map_rotation_key(key) {
+            push_rotation_event(direction);
         }
     }
 
@@ -54,6 +62,17 @@ fn poll_window_input(window: &Window) {
         if let Some(button) = map_button_key(key) {
             push_key_event(button, HW_KEY_RELEASED);
         }
+    }
+
+    let middle_mouse_down = window.get_mouse_down(MouseButton::Middle);
+    if middle_mouse_down != state.middle_mouse_down {
+        let key_state = if middle_mouse_down {
+            HW_KEY_PRESSED
+        } else {
+            HW_KEY_RELEASED
+        };
+        push_key_event(HW_KEY_ROTARY_SWITCH, key_state);
+        state.middle_mouse_down = middle_mouse_down;
     }
 
     if let Some((_x, y)) = window.get_scroll_wheel() {
@@ -72,6 +91,14 @@ fn map_button_key(key: Key) -> Option<std::ffi::c_int> {
         Key::Key3 | Key::NumPad3 => Some(HW_KEY_BUTTON_3),
         Key::Key4 | Key::NumPad4 => Some(HW_KEY_BUTTON_4),
         Key::Enter => Some(HW_KEY_ROTARY_SWITCH),
+        _ => None,
+    }
+}
+
+fn map_rotation_key(key: Key) -> Option<std::ffi::c_int> {
+    match key {
+        Key::Left => Some(HW_ROTARY_CCW),
+        Key::Right => Some(HW_ROTARY_CW),
         _ => None,
     }
 }

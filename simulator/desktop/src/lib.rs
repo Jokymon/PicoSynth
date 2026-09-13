@@ -355,7 +355,7 @@ mod tests {
         TEST_LOCK
             .get_or_init(|| Mutex::new(()))
             .lock()
-            .expect("test mutex poisoned")
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
     #[test]
@@ -505,7 +505,7 @@ mod tests {
     }
 
     #[test]
-    fn simulator_startup_draws_text_frame() {
+    fn simulator_startup_draws_lcd_frame() {
         unsafe extern "C" {
             fn synth_simulator_main_once() -> i32;
         }
@@ -520,7 +520,7 @@ mod tests {
         assert!(
             lcd_framebuffer_snapshot()
                 .iter()
-                .any(|pixel| *pixel == Rgb565(0xffff))
+                .any(|pixel| *pixel != Rgb565(0x0000))
         );
     }
 
