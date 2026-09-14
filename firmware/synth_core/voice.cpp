@@ -48,14 +48,14 @@ int16_t Voice::sample()
                 }
                 break;
             case Voice::Decay:
-                hull_value -= 1/(decay * sample_frequency_hz);
+                hull_value -= (1-sustain)/(decay * sample_frequency_hz);
                 if (hull_value<=sustain) {
                     hull_value = sustain;
                     state = Voice::Sustain;
                 }
                 break;
             case Voice::Release:
-                hull_value -= 1/(release * sample_frequency_hz);
+                hull_value -= sustain/(release * sample_frequency_hz);
                 if (hull_value<=0.0) {
                     hull_value = 0.0;
                     state = Voice::Off;
