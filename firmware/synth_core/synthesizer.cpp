@@ -17,7 +17,7 @@ namespace {
 constexpr uint32_t PICO_AUDIO_FREQ = 40000;
 constexpr uint8_t MIDI_NOTE_OFF = 0x8;
 constexpr uint8_t MIDI_NOTE_ON = 0x9;
-constexpr size_t VOICE_COUNT = 2;
+constexpr size_t VOICE_COUNT = 3;
 
 struct Message {
     uint8_t type;
@@ -103,6 +103,8 @@ void start() {
     for (size_t i = 0; i < voices.size(); i++) {
         voices[i] = new Voice(PICO_AUDIO_FREQ, sine_samples.data());
     }
+    voices[1]->set_waveform(Voice::Rectangle);
+    voices[2]->set_waveform(Voice::Triangle);
     started = true;
 }
 

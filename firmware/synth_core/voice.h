@@ -9,12 +9,15 @@ class Voice
 public:
     enum WaveForm
     {
-        Sine
+        Sine, 
+        Rectangle,
+        Triangle,
     };
 
     explicit Voice(uint32_t sample_frequency_hz, int32_t *sine_samples);
 
     void set_frequency(uint32_t frequency_hz);
+    void set_waveform(WaveForm form);
     
     // Turn the output of this voice on or off; in case of no ADSR envelope
     // this will directly turn the wave on or off. In case of ADSR, gating

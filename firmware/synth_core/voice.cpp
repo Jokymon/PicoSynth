@@ -6,6 +6,11 @@ const double decay = 0.3;    // seconds
 const double sustain = 0.5;  // 50%
 const double release = 0.75; // seconds
 
+const float oscillator_period = 256.0f;
+const float oscillator_half_period = oscillator_period / 2.0f;
+const float waveform_peak = 32767.0f;
+const float triangle_slope = (waveform_peak * 2.0f) / oscillator_half_period;
+
 static inline float calculate_sample_increment(uint32_t tone_frequency_hz, uint32_t sample_frequency_hz)
 {
     // 256 samples for a wave
@@ -29,12 +34,17 @@ void Voice::set_frequency(uint32_t frequency_hz)
     sample_increment = calculate_sample_increment(frequency_hz, sample_frequency_hz);
 }
 
+void Voice::set_waveform(WaveForm form)
+{
+    this->wave_form = form;
+}
+
 int16_t Voice::sample()
 {
     current_index += sample_increment;
-    if (current_index > 256.0)
+    if (current_index > oscillator_period)
     {
-        current_index -= 256.0;
+        current_index -= oscillator_period;
     }
 
     if (state != Voice::Off)
@@ -62,9 +72,23 @@ int16_t Voice::sample()
                 }
                 break;
         }
-        return static_cast<int16_t>(
-            static_cast<double>(sine_samples[(size_t)current_index]) *
-            hull_value);
+
+        switch (wave_form) {
+            case Voice::Sine:
+                return static_cast<int16_t>(
+                    static_cast<double>(sine_samples[(size_t)current_index]) *
+                    hull_value);
+            case Voice::Rectangle:
+                return static_cast<int16_t>(
+                    static_cast<double>(current_index < oscillator_half_period ? waveform_peak : -waveform_peak) *
+                    hull_value);
+            case Voice::Triangle:
+                return static_cast<int16_t>(
+                    static_cast<double>(current_index < oscillator_half_period
+                        ? current_index * triangle_slope - waveform_peak
+                        : waveform_peak - (current_index - oscillator_half_period) * triangle_slope) *
+                    hull_value);
+        }
     }
     else
     {

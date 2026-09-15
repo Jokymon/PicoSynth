@@ -95,9 +95,9 @@ protected:
         case KeyId::KEY2:
             buttons[2].pressed = pressed;
             if (pressed) {
-                Audio::Synthesizer::note_on(1, 72, 64);
+                Audio::Synthesizer::note_on(2, 72, 64);
             } else {
-                Audio::Synthesizer::note_off(1, 72, 64);
+                Audio::Synthesizer::note_off(2, 72, 64);
             }
             break;
         case KeyId::KEY3:
