@@ -4,6 +4,7 @@ add_executable(${PICO_SYNTH_TARGET}
     rp2040_backend/main.cpp
 
     hal/lcd_1in44.c
+    rp2040_backend/audio_pio.c
     rp2040_backend/DEV_Config.c
     rp2040_backend/hardware_rp2040.cpp
     rp2040_backend/lcd_1in44_rp2040.cpp
@@ -36,11 +37,18 @@ target_include_directories(${PICO_SYNTH_TARGET} PRIVATE
 target_link_libraries(${PICO_SYNTH_TARGET} PRIVATE
     pico_stdlib
     pico_util
+    pico_multicore
 
     hardware_gpio
+    hardware_pio
     hardware_spi
     hardware_pwm
     hardware_adc
+)
+
+pico_generate_pio_header(
+    ${PICO_SYNTH_TARGET}
+    ${CMAKE_CURRENT_LIST_DIR}/rp2040_backend/audio_pio.pio
 )
 
 pico_add_extra_outputs(${PICO_SYNTH_TARGET})
