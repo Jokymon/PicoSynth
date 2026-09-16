@@ -149,6 +149,7 @@ extern "C" void synth_app_start(UWORD *screen) {
                    ROTATE_270, BLACK);
     Paint_SetScale(65);
     Paint_SetRotate(ROTATE_270);
+    Paint_Clear(BLACK);
 
     if (main_page == nullptr) {
         main_page = new MainPage();

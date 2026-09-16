@@ -7,7 +7,11 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#ifdef PICO_BUILD
+#include "pico/critical_section.h"
+#else
 #include <mutex>
+#endif
 #include <queue>
 
 namespace Audio {
@@ -29,8 +33,30 @@ struct Message {
 std::array<int32_t, 256> sine_samples;
 std::array<Voice *, VOICE_COUNT> voices = {};
 std::queue<Message> messages;
+#ifdef PICO_BUILD
+critical_section_t messages_lock;
+bool messages_lock_initialized = false;
+#else
 std::mutex messages_mutex;
+#endif
 bool started = false;
+
+#ifdef PICO_BUILD
+class MessageLock {
+public:
+    MessageLock() {
+        if (!messages_lock_initialized) {
+            critical_section_init(&messages_lock);
+            messages_lock_initialized = true;
+        }
+        critical_section_enter_blocking(&messages_lock);
+    }
+
+    ~MessageLock() {
+        critical_section_exit(&messages_lock);
+    }
+};
+#endif
 
 void create_sinewave_table() {
     for (size_t i = 0; i < sine_samples.size(); i++) {
@@ -58,7 +84,11 @@ void process_message(const Message &message) {
 }
 
 void drain_messages() {
+#ifdef PICO_BUILD
+    MessageLock lock;
+#else
     std::lock_guard<std::mutex> lock(messages_mutex);
+#endif
 
     while (!messages.empty()) {
         process_message(messages.front());
@@ -88,7 +118,11 @@ int16_t next_mono_sample() {
 }
 
 void push_message(uint8_t type, uint8_t channel, uint8_t note, uint8_t velocity) {
+#ifdef PICO_BUILD
+    MessageLock lock;
+#else
     std::lock_guard<std::mutex> lock(messages_mutex);
+#endif
     messages.push(Message{type, channel, note, velocity});
 }
 

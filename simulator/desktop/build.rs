@@ -83,9 +83,11 @@ fn main() {
     );
     println!("cargo:rerun-if-changed=cpp/sim_main.cpp");
 
-    cc::Build::new()
+    let mut build = cc::Build::new();
+    build
         .cpp(true)
         .std("c++17")
+        .cargo_debug(true)
         .include(firmware.join("hal"))
         .include(firmware.join("synth_core"))
         .include(firmware.join("synth_core/Fonts"))
@@ -97,6 +99,13 @@ fn main() {
         .file(firmware.join("synth_core/voice.cpp"))
         .file(firmware.join("synth_core/GUI_Paint.c"))
         .file(firmware.join("synth_core/Fonts/font12.c"))
-        .file("cpp/sim_main.cpp")
-        .compile("synth_core");
+        .file("cpp/sim_main.cpp");
+
+    if let Err(error) = build.try_compile("synth_core") {
+        panic!(
+            "failed to compile desktop simulator C/C++ firmware bridge: {error}\n\
+             cc-rs debug output is enabled for this build script, so the compiler \
+             command and diagnostics should appear above this message."
+        );
+    }
 }

@@ -3,9 +3,10 @@
 
 extern "C" {
 #include "GUI_Paint.h"
+#include "lcd_1in44.h"
 }
 
-std::array<char*, 3> MENU_ENTRIES = {
+std::array<const char*, 3> MENU_ENTRIES = {
     "Voices",
     "Sequencer",
     "Settings"
