@@ -24,7 +24,6 @@ constexpr uint8_t MIDI_NOTE_OFF = 0x8;
 constexpr uint8_t MIDI_NOTE_ON = 0x9;
 constexpr size_t VOICE_COUNT = 3;
 
-#ifdef PICO_BUILD
 constexpr uint8_t MIDI_MESSAGE_SHIFT = 28;
 constexpr uint8_t MIDI_CHANNEL_SHIFT = 24;
 constexpr uint8_t MIDI_NOTE_SHIFT = 16;
@@ -44,21 +43,13 @@ inline uint32_t midi_note_off(uint8_t channel, uint8_t note, uint8_t velocity) {
 inline uint32_t midi_note_on(uint8_t channel, uint8_t note, uint8_t velocity) {
     return encode_midi_message(MIDI_NOTE_ON, channel, note, velocity);
 }
-#else
-struct Message {
-    uint8_t type;
-    uint8_t channel;
-    uint8_t note;
-    uint8_t velocity;
-};
-#endif
 
 std::array<int32_t, 256> sine_samples;
 std::array<Voice *, VOICE_COUNT> voices = {};
 #ifdef PICO_BUILD
 bool core1_started = false;
 #else
-std::queue<Message> messages;
+std::queue<uint32_t> messages;
 std::mutex messages_mutex;
 bool started = false;
 #endif
@@ -92,8 +83,7 @@ void process_midi_message(uint8_t type, uint8_t channel, uint8_t note,
     }
 }
 
-#ifdef PICO_BUILD
-void process_fifo_message(uint32_t message) {
+void process_message(uint32_t message) {
     uint8_t type = static_cast<uint8_t>(message >> MIDI_MESSAGE_SHIFT);
     uint8_t channel = static_cast<uint8_t>((message >> MIDI_CHANNEL_SHIFT) & 0xf);
     uint8_t note = static_cast<uint8_t>((message >> MIDI_NOTE_SHIFT) & 0x7f);
@@ -101,6 +91,7 @@ void process_fifo_message(uint32_t message) {
     process_midi_message(type, channel, note, velocity);
 }
 
+#ifdef PICO_BUILD
 uint32_t next_packed_i2s16_sample() {
     int32_t mixed = 0;
     for (Voice *voice : voices) {
@@ -129,7 +120,7 @@ void core1_audio_process() {
 
     while (true) {
         while (multicore_fifo_rvalid()) {
-            process_fifo_message(multicore_fifo_pop_blocking());
+            process_message(multicore_fifo_pop_blocking());
         }
 
         if (!audio_pio_tx_fifo_full()) {
@@ -142,10 +133,9 @@ void drain_messages() {
     std::lock_guard<std::mutex> lock(messages_mutex);
 
     while (!messages.empty()) {
-        Message message = messages.front();
+        uint32_t message = messages.front();
         messages.pop();
-        process_midi_message(message.type, message.channel, message.note,
-                             message.velocity);
+        process_message(message);
     }
 }
 
@@ -170,9 +160,9 @@ int16_t next_mono_sample() {
     return static_cast<int16_t>(mixed);
 }
 
-void push_message(uint8_t type, uint8_t channel, uint8_t note, uint8_t velocity) {
+void push_message(uint32_t message) {
     std::lock_guard<std::mutex> lock(messages_mutex);
-    messages.push(Message{type, channel, note, velocity});
+    messages.push(message);
 }
 #endif
 
@@ -202,18 +192,20 @@ void start() {
 }
 
 void note_on(uint8_t channel, uint8_t note, uint8_t velocity) {
+    uint32_t message = midi_note_on(channel, note, velocity);
 #ifdef PICO_BUILD
-    multicore_fifo_push_blocking(midi_note_on(channel, note, velocity));
+    multicore_fifo_push_blocking(message);
 #else
-    push_message(MIDI_NOTE_ON, channel, note, velocity);
+    push_message(message);
 #endif
 }
 
 void note_off(uint8_t channel, uint8_t note, uint8_t velocity) {
+    uint32_t message = midi_note_off(channel, note, velocity);
 #ifdef PICO_BUILD
-    multicore_fifo_push_blocking(midi_note_off(channel, note, velocity));
+    multicore_fifo_push_blocking(message);
 #else
-    push_message(MIDI_NOTE_OFF, channel, note, velocity);
+    push_message(message);
 #endif
 }
 
