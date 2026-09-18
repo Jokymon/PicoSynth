@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 fn main() {
     let root = PathBuf::from("../..");
@@ -83,6 +84,18 @@ fn main() {
     );
     println!("cargo:rerun-if-changed=cpp/sim_main.cpp");
 
+    let sources = [
+        firmware.join("hal/lcd_1in44.c"),
+        firmware.join("synth_core/synth_app.cpp"),
+        firmware.join("synth_core/gui.cpp"),
+        firmware.join("synth_core/gui/main_menu.cpp"),
+        firmware.join("synth_core/synthesizer.cpp"),
+        firmware.join("synth_core/voice.cpp"),
+        firmware.join("synth_core/GUI_Paint.c"),
+        firmware.join("synth_core/Fonts/font12.c"),
+        PathBuf::from("cpp/sim_main.cpp"),
+    ];
+
     let mut build = cc::Build::new();
     build
         .cpp(true)
@@ -90,22 +103,70 @@ fn main() {
         .cargo_debug(true)
         .include(firmware.join("hal"))
         .include(firmware.join("synth_core"))
-        .include(firmware.join("synth_core/Fonts"))
-        .file(firmware.join("hal/lcd_1in44.c"))
-        .file(firmware.join("synth_core/synth_app.cpp"))
-        .file(firmware.join("synth_core/gui.cpp"))
-        .file(firmware.join("synth_core/gui/main_menu.cpp"))
-        .file(firmware.join("synth_core/synthesizer.cpp"))
-        .file(firmware.join("synth_core/voice.cpp"))
-        .file(firmware.join("synth_core/GUI_Paint.c"))
-        .file(firmware.join("synth_core/Fonts/font12.c"))
-        .file("cpp/sim_main.cpp");
+        .include(firmware.join("synth_core/Fonts"));
+
+    for source in &sources {
+        build.file(source);
+    }
 
     if let Err(error) = build.try_compile("synth_core") {
+        replay_compiler_diagnostics(&build, &sources);
+
         panic!(
             "failed to compile desktop simulator C/C++ firmware bridge: {error}\n\
-             cc-rs debug output is enabled for this build script, so the compiler \
-             command and diagnostics should appear above this message."
+             compiler diagnostics were replayed to stderr above this message."
         );
     }
+}
+
+fn replay_compiler_diagnostics(build: &cc::Build, sources: &[PathBuf]) {
+    eprintln!("cc-rs failed; replaying compiler diagnostics with captured output:");
+
+    let compiler = build.get_compiler();
+    let target = std::env::var("TARGET").unwrap_or_default();
+    let out_dir = PathBuf::from(std::env::var_os("OUT_DIR").unwrap());
+
+    for (index, source) in sources.iter().enumerate() {
+        let mut command = compiler.to_command();
+        let object = out_dir.join(format!("diagnostic-{index}.obj"));
+
+        add_compile_only_args(&mut command, &target, source, &object);
+        eprintln!("running: {command:?}");
+
+        match command.output() {
+            Ok(output) if output.status.success() => {}
+            Ok(output) => {
+                eprintln!("exit status: {}", output.status);
+                print_stream("stdout", &output.stdout);
+                print_stream("stderr", &output.stderr);
+                return;
+            }
+            Err(error) => {
+                eprintln!("failed to replay compiler command: {error}");
+                return;
+            }
+        }
+    }
+}
+
+fn add_compile_only_args(command: &mut Command, target: &str, source: &Path, object: &Path) {
+    if target.contains("msvc") {
+        command.arg(format!("-Fo{}", object.display()));
+        command.arg("-c");
+        command.arg(source);
+    } else {
+        command.arg("-o");
+        command.arg(object);
+        command.arg("-c");
+        command.arg(source);
+    }
+}
+
+fn print_stream(name: &str, bytes: &[u8]) {
+    if bytes.is_empty() {
+        return;
+    }
+
+    eprintln!("--- compiler {name} ---");
+    eprintln!("{}", String::from_utf8_lossy(bytes));
 }
