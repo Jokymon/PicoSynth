@@ -5,6 +5,7 @@ extern "C" {
 }
 
 #include "gui.h"
+#include "gui/gui_core.h"
 #include "midi.h"
 #include "synthesizer.h"
 
@@ -158,6 +159,29 @@ extern "C" void synth_app_start(UWORD *screen) {
     draw_main_page(screen);
 }
 
+RotaryDir map_rotation(hw_rotary_dir_t direction)
+{
+    return direction == HW_ROTARY_CW ? RotaryDir::CW : RotaryDir::CCW;
+}
+
+KeyId map_key(hw_key_id_t key)
+{
+    switch (key) {
+        case HW_KEY_ROTARY_SWITCH:
+            return KeyId::ROT_SWITCH;
+        case HW_KEY_BUTTON_1:
+            return KeyId::KEY0;
+        case HW_KEY_BUTTON_2:
+            return KeyId::KEY1;
+        case HW_KEY_BUTTON_3:
+            return KeyId::KEY2;
+        case HW_KEY_BUTTON_4:
+            return KeyId::KEY3;
+        default:
+            return KeyId::KEY0;
+    }
+}
+
 extern "C" void synth_app_loop(UWORD *screen) {
     if (screen == nullptr || main_page == nullptr) {
         return;
@@ -166,7 +190,23 @@ extern "C" void synth_app_loop(UWORD *screen) {
     hw_event_t event;
     bool changed = false;
     while (get_event(&event)) {
-        main_page->handle_event(event);
+
+        Gui::InputEvent input_event;
+        switch (event.type) {
+            case HW_EVENT_ROTATION:
+                input_event = Gui::InputEvent::from_rotation(map_rotation(event.data.rotation.direction));
+                break;
+            case HW_EVENT_KEY:
+                bool pressed = false;
+                if (event.data.key.state == HW_KEY_PRESSED) {
+                    pressed = true;
+                }
+
+                input_event = Gui::InputEvent::from_key(map_key(event.data.key.key), pressed);
+
+                break;
+        }
+        main_page->handle_event(input_event);
         changed = true;
     }
 

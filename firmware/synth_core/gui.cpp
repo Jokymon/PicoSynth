@@ -41,43 +41,14 @@ namespace Gui
         const uint16_t BUTTON_TEXT_COLOR_PRESSED = BG_PANEL;
     }
 
-    RotaryDir map_rotation(hw_rotary_dir_t direction)
-    {
-        return direction == HW_ROTARY_CW ? RotaryDir::CW : RotaryDir::CCW;
-    }
-
-    KeyId map_key(hw_key_id_t key)
-    {
-        switch (key) {
-            case HW_KEY_ROTARY_SWITCH:
-                return KeyId::ROT_SWITCH;
-            case HW_KEY_BUTTON_1:
-                return KeyId::KEY0;
-            case HW_KEY_BUTTON_2:
-                return KeyId::KEY1;
-            case HW_KEY_BUTTON_3:
-                return KeyId::KEY2;
-            case HW_KEY_BUTTON_4:
-                return KeyId::KEY3;
-            default:
-                return KeyId::KEY0;
-        }
-    }
-
-    void Page::handle_event(hw_event_t& event)
+    void Page::handle_event(Gui::InputEvent& event)
     {
         switch (event.type) {
-            case HW_EVENT_ROTATION:
-                handle_rotation(map_rotation(event.data.rotation.direction));
+            case Gui::InputEvent::Type::Rotation:
+                handle_rotation(event.rotation);
                 break;
-            case HW_EVENT_KEY:
-                bool pressed = false;
-                if (event.data.key.state == HW_KEY_PRESSED) {
-                    pressed = true;
-                }
-
-                KeyId key = map_key(event.data.key.key);
-                handle_key_press(key, pressed);
+            case Gui::InputEvent::Type::Key:
+                handle_key_press(event.key_id, event.pressed);
                 break;
         }
     }

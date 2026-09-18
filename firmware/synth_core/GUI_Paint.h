@@ -146,13 +146,8 @@ void Paint_DrawBitMap_Block(const unsigned char* image_buffer, UBYTE Region);
 
 void Paint_DrawImage(const unsigned char *image, UWORD xStart, UWORD yStart, UWORD W_Image, UWORD H_Image) ;
 void Paint_DrawImage1(const unsigned char *image, UWORD xStart, UWORD yStart, UWORD W_Image, UWORD H_Image);
- void Paint_BmpWindows(unsigned char x,unsigned char y,const unsigned char *pBmp,\
+void Paint_BmpWindows(unsigned char x,unsigned char y,const unsigned char *pBmp,\
 					unsigned char chWidth,unsigned char chHeight);
 
 
 #endif
-
-
-
-
-

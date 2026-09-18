@@ -2,6 +2,7 @@
 #define GUI_H
 
 #include "hardware.h"
+#include "gui/gui_core.h"
 
 namespace Gui
 {
@@ -14,12 +15,9 @@ namespace Gui
         Key3 = 3
     };
 
-    RotaryDir map_rotation(hw_rotary_dir_t direction);
-    KeyId map_key(hw_key_id_t key);
-
     class Page {
         public:
-            void handle_event(hw_event_t& event);
+            void handle_event(Gui::InputEvent& event);
             virtual void draw() =0;
 
         protected:
