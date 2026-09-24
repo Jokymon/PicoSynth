@@ -1,3 +1,6 @@
 /target
 /build/
 /build-*/
+
+# for documentation and reference material not be versioned
+shelf/
