@@ -1,4 +1,5 @@
 #include "main_menu.h"
+#include "gui/colors.h"
 #include <array>
 
 extern "C" {
@@ -25,18 +26,18 @@ MainMenu::MainMenu()
 
 void MainMenu::draw()
 {
-    Paint_DrawString_EN(MENU_MARGIN_LEFT, 2, "MAIN MENU", &Font12, 0xe73d, 0x0862);
+    Paint_DrawString_EN(MENU_MARGIN_LEFT, 2, "MAIN MENU", &Font12, TEXT_PRIMARY, BG_BLACK);
 
-    Paint_DrawLine(0, TITLE_HEIGHT, LCD_1IN44.WIDTH-1, TITLE_HEIGHT, 0x2147, DOT_PIXEL_1X1, LINE_STYLE_SOLID);
+    Paint_DrawLine(0, TITLE_HEIGHT, LCD_1IN44.WIDTH-1, TITLE_HEIGHT, BG_SURFACE, DOT_PIXEL_1X1, LINE_STYLE_SOLID);
     for (size_t i=0; i<MENU_ENTRIES.size(); i++)
     {
-        UWORD text_color = 0xe73d;
+        UWORD text_color = TEXT_PRIMARY;
         if (i==menu_index)
         {
-            text_color = 0x073f;
+            text_color = PRIMARY_ACCENT;
             Paint_DrawRectangle(2, TITLE_HEIGHT+MENU_MARGIN_TOP+(TEXT_HEIGHT+TEXT_SPACING)*i - 2,
                                 LCD_1IN44.WIDTH-2, TITLE_HEIGHT+(TEXT_HEIGHT+TEXT_SPACING)*(i+1)+2,
-                                0x073f, DOT_PIXEL_1X1,
+                                PRIMARY_ACCENT, DOT_PIXEL_1X1,
                                 DRAW_FILL_EMPTY);
         }
 
@@ -45,7 +46,7 @@ void MainMenu::draw()
             MENU_ENTRIES[i],
             &Font12,
             text_color,
-            0x18c4);
+            BG_PANEL);
     }
 }
 
