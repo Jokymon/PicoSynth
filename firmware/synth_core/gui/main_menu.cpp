@@ -16,17 +16,21 @@ const int32_t MENU_MARGIN_TOP = 2;
 
 MainMenu::MainMenu()
 {
-    append_widget(std::make_unique<Gui::NavItem>(
+    append_selectable_widget(std::make_unique<Gui::NavItem>(
         2, TITLE_HEIGHT+MENU_MARGIN_TOP,
         "Voices"
     ));
-    append_widget(std::make_unique<Gui::NavItem>(
+    append_selectable_widget(std::make_unique<Gui::NavItem>(
         2, TITLE_HEIGHT+MENU_MARGIN_TOP+TEXT_HEIGHT+TEXT_SPACING,
         "Sequencer"
     ));
-    append_widget(std::make_unique<Gui::NavItem>(
+    append_selectable_widget(std::make_unique<Gui::NavItem>(
         2, TITLE_HEIGHT+MENU_MARGIN_TOP+2*(TEXT_HEIGHT+TEXT_SPACING),
         "Settings"
+    ));
+
+    append_selectable_widget(std::make_unique<Gui::TestButton>(
+        0, "A#"
     ));
 }
 

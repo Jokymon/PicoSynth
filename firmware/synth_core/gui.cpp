@@ -51,19 +51,14 @@ namespace Gui
     void Page::append_widget(std::unique_ptr<Gui::Widget> widget)
     {
         widgets.push_back(std::move(widget));
-        if (widgets.size()==1)
-        {
-            // Make sure, that the first item is immediately selected
-            widgets[0]->selected = true;
-        }
     }
 
     void Page::select_increment(int8_t increment)
     {
-        widgets[selected_widget_index]->selected = false;
-        selected_widget_index += (int16_t)widgets.size() + increment;
-        selected_widget_index %= widgets.size();
-        widgets[selected_widget_index]->selected = true;
+        selectables[selected_widget_index]->selected = false;
+        selected_widget_index += (int16_t)selectables.size() + increment;
+        selected_widget_index %= selectables.size();
+        selectables[selected_widget_index]->selected = true;
     }
 
 

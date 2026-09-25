@@ -104,7 +104,7 @@ fn main() {
     let mut build = cc::Build::new();
     build
         .cpp(true)
-        .std("c++17")
+        .std("c++20")
         .cargo_debug(true)
         .include(firmware.join("hal"))
         .include(firmware.join("synth_core"))

@@ -49,4 +49,68 @@ void NavItem::draw()
         BG_PANEL);
 }
 
+    namespace
+    {
+        const uint16_t BUTTON_BACKGROUND_COLOR_IDLE = BG_SURFACE;
+        const uint16_t BUTTON_BACKGROUND_COLOR_SELECTED = BG_SURFACE;
+        const uint16_t BUTTON_BACKGROUND_COLOR_PRESSED = PRIMARY_ACCENT;
+
+        const uint16_t BUTTON_BORDER_COLOR_SELECTED = PRIMARY_ACCENT;
+        const uint16_t BUTTON_BORDER_COLOR_PRESSED = PRIMARY_ACCENT;
+    
+        const uint16_t BUTTON_TEXT_COLOR = TEXT_PRIMARY;
+        const uint16_t BUTTON_TEXT_COLOR_SELECTED = PRIMARY_ACCENT;
+        const uint16_t BUTTON_TEXT_COLOR_PRESSED = BG_PANEL;
+    }
+
+TestButton::TestButton(size_t index, const std::string& text)
+: text(text)
+{
+    static const UWORD BUTTON_WIDTH = LCD_1IN44.WIDTH / 4;
+
+    this->x = index * BUTTON_WIDTH;
+    this->y = LCD_1IN44.HEIGHT - BUTTON_WIDTH;
+    this->width = BUTTON_WIDTH;
+    this->height = BUTTON_WIDTH;
+}
+
+void TestButton::draw()
+{
+    uint16_t background_color = pressed ? BUTTON_BACKGROUND_COLOR_PRESSED : BUTTON_BACKGROUND_COLOR_IDLE;
+    // if (active) {
+    //     background_color = BUTTON_BACKGROUND_COLOR_PRESSED;
+    // }
+
+    Paint_DrawRectangle(x, y,
+                        x+width, y+height,
+                        background_color, DOT_PIXEL_1X1,
+                        DRAW_FILL_FULL);
+
+    if (selected)
+    {
+        uint16_t border_color = BUTTON_BORDER_COLOR_SELECTED;
+        // if (active) {
+        //     border_color = BUTTON_BORDER_COLOR_PRESSED;
+        // }
+
+        Paint_DrawRectangle(x, y,
+                            x+width, y+height,
+                            border_color, DOT_PIXEL_2X2,
+                            DRAW_FILL_EMPTY);
+    }
+
+    uint16_t text_background_color = background_color;
+
+    uint16_t text_color = BUTTON_TEXT_COLOR;
+    if (selected) {
+        text_color = BUTTON_TEXT_COLOR_SELECTED;
+    }
+    // if (active || pressed) {
+    //     text_color = BUTTON_TEXT_COLOR_PRESSED;
+    // }
+
+    Paint_DrawString_EN(x + 4, y + 9, text.c_str(),
+                        &Font12, text_color, text_background_color);
+}
+
 }
