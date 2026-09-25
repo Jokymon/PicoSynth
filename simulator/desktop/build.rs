@@ -36,6 +36,10 @@ fn main() {
     );
     println!(
         "cargo:rerun-if-changed={}",
+        firmware.join("synth_core/gui/widgets.cpp").display()
+    );
+    println!(
+        "cargo:rerun-if-changed={}",
         firmware.join("synth_core/gui.h").display()
     );
     println!(
@@ -89,6 +93,7 @@ fn main() {
         firmware.join("synth_core/synth_app.cpp"),
         firmware.join("synth_core/gui.cpp"),
         firmware.join("synth_core/gui/main_menu.cpp"),
+        firmware.join("synth_core/gui/widgets.cpp"),
         firmware.join("synth_core/synthesizer.cpp"),
         firmware.join("synth_core/voice.cpp"),
         firmware.join("synth_core/GUI_Paint.c"),

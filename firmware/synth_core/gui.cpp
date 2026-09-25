@@ -27,8 +27,11 @@ namespace Gui
 
     void Page::handle_event(Gui::InputEvent& event)
     {
+        int8_t increment=0;
         switch (event.type) {
             case Gui::InputEvent::Type::Rotation:
+                increment = event.rotation == RotaryDir::CCW ? -1 : +1;
+                select_increment(increment);
                 handle_rotation(event.rotation);
                 break;
             case Gui::InputEvent::Type::Key:
@@ -36,6 +39,33 @@ namespace Gui
                 break;
         }
     }
+
+    void Page::draw()
+    {
+        for (const auto& widget : widgets)
+        {
+            widget->draw();
+        }
+    }
+
+    void Page::append_widget(std::unique_ptr<Gui::Widget> widget)
+    {
+        widgets.push_back(std::move(widget));
+        if (widgets.size()==1)
+        {
+            // Make sure, that the first item is immediately selected
+            widgets[0]->selected = true;
+        }
+    }
+
+    void Page::select_increment(int8_t increment)
+    {
+        widgets[selected_widget_index]->selected = false;
+        selected_widget_index += (int16_t)widgets.size() + increment;
+        selected_widget_index %= widgets.size();
+        widgets[selected_widget_index]->selected = true;
+    }
+
 
     Button::Button(ButtonId id, const char* label)
         : id(id), label(label), pressed(false), active(false), selected(false)

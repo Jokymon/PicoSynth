@@ -3,6 +3,9 @@
 
 #include "hardware.h"
 #include "gui/gui_core.h"
+#include "gui/widgets.h"
+#include <memory>
+#include <vector>
 
 namespace Gui
 {
@@ -18,11 +21,20 @@ namespace Gui
     class Page {
         public:
             void handle_event(Gui::InputEvent& event);
-            virtual void draw() =0;
+            virtual void draw();
 
         protected:
             virtual void handle_rotation(RotaryDir direction) =0;
             virtual void handle_key_press(KeyId key, bool pressed) =0;
+
+            void append_widget(std::unique_ptr<Gui::Widget> widget);
+
+        private:
+            void select_increment(int8_t increment);
+
+        private:
+            std::vector<std::unique_ptr<Gui::Widget>> widgets;
+            size_t selected_widget_index =0;
     };
 
     struct Button {
