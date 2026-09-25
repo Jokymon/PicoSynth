@@ -13,6 +13,8 @@ add_executable(${PICO_SYNTH_TARGET}
     synth_core/synth_app.cpp
     synth_core/synthesizer.cpp
     synth_core/voice.cpp
+    synth_core/gui/main_menu.cpp
+    synth_core/gui/widgets.cpp
     synth_core/Fonts/font8.c
     synth_core/Fonts/font12.c
     synth_core/Fonts/font16.c
