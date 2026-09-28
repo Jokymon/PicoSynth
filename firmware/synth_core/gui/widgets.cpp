@@ -49,6 +49,22 @@ void NavItem::draw()
         BG_PANEL);
 }
 
+ReactionEvent NavItem::on_push()
+{
+    return ReactionEvent::from_target_page(1);
+}
+
+void NavItem::on_rotate(int8_t increment)
+{
+    // NavItem is not expected to ever become active and thus
+    // should also never get any rotation events.
+
+    // TODO: Should we separate selectables which can be activated
+    // and those which only ever navigate? How would we model this
+    // differently?
+}
+
+
     namespace
     {
         const uint16_t BUTTON_BACKGROUND_COLOR_IDLE = BG_SURFACE;
@@ -72,14 +88,16 @@ TestButton::TestButton(size_t index, const std::string& text)
     this->y = LCD_1IN44.HEIGHT - BUTTON_WIDTH;
     this->width = BUTTON_WIDTH;
     this->height = BUTTON_WIDTH;
+
+    this->text = std::to_string(index);
 }
 
 void TestButton::draw()
 {
     uint16_t background_color = pressed ? BUTTON_BACKGROUND_COLOR_PRESSED : BUTTON_BACKGROUND_COLOR_IDLE;
-    // if (active) {
-    //     background_color = BUTTON_BACKGROUND_COLOR_PRESSED;
-    // }
+    if (active) {
+        background_color = BUTTON_BACKGROUND_COLOR_PRESSED;
+    }
 
     Paint_DrawRectangle(x, y,
                         x+width, y+height,
@@ -89,9 +107,9 @@ void TestButton::draw()
     if (selected)
     {
         uint16_t border_color = BUTTON_BORDER_COLOR_SELECTED;
-        // if (active) {
-        //     border_color = BUTTON_BORDER_COLOR_PRESSED;
-        // }
+        if (active) {
+            border_color = BUTTON_BORDER_COLOR_PRESSED;
+        }
 
         Paint_DrawRectangle(x, y,
                             x+width, y+height,
@@ -105,12 +123,30 @@ void TestButton::draw()
     if (selected) {
         text_color = BUTTON_TEXT_COLOR_SELECTED;
     }
-    // if (active || pressed) {
-    //     text_color = BUTTON_TEXT_COLOR_PRESSED;
-    // }
+    if (active || pressed) {
+        text_color = BUTTON_TEXT_COLOR_PRESSED;
+    }
 
     Paint_DrawString_EN(x + 4, y + 9, text.c_str(),
                         &Font12, text_color, text_background_color);
+}
+
+ReactionEvent TestButton::on_push()
+{
+    if (active)
+    {
+        return ReactionEvent::deactivate();
+    }
+    else
+    {
+        return ReactionEvent::activate();
+    }
+}
+
+void TestButton::on_rotate(int8_t increment)
+{
+    index = (index + increment + 5) % 5;
+    text = std::to_string(index);
 }
 
 }

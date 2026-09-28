@@ -31,10 +31,29 @@ namespace Gui
         switch (event.type) {
             case Gui::InputEvent::Type::Rotation:
                 increment = event.rotation == RotaryDir::CCW ? -1 : +1;
-                select_increment(increment);
+                if (selectables[selected_widget_index]->active)
+                {
+                    selectables[selected_widget_index]->on_rotate(increment);
+                }
+                else
+                {
+                    select_increment(increment);
+                }
                 handle_rotation(event.rotation);
                 break;
             case Gui::InputEvent::Type::Key:
+                if ((event.key_id == KeyId::ROT_SWITCH) && event.pressed)
+                {
+                    auto event = selectables[selected_widget_index]->on_push();
+                    if (event.type == ReactionEvent::Type::Activate)
+                    {
+                        selectables[selected_widget_index]->active = true;
+                    }
+                    else if (event.type == ReactionEvent::Type::Deactivate)
+                    {
+                        selectables[selected_widget_index]->active = false;
+                    }
+                }
                 handle_key_press(event.key_id, event.pressed);
                 break;
         }
