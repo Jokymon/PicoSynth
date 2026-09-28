@@ -89,6 +89,8 @@ int16_t Voice::sample()
                         : waveform_peak - (current_index - oscillator_half_period) * triangle_slope) *
                     hull_value);
         }
+
+        return 0;
     }
     else
     {
