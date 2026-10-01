@@ -4,6 +4,7 @@
 #include "hardware.h"
 #include "gui/gui_core.h"
 #include "gui/widgets.h"
+#include <array>
 #include <concepts>
 #include <memory>
 #include <vector>
@@ -43,6 +44,11 @@ namespace Gui
                     selectables[0]->selected = true;
                 }
 
+                if constexpr (std::derived_from<T, Gui::PushButton>)
+                {
+                    push_buttons[widget->button_index] = widget.get();
+                }
+
                 append_widget(std::move(widget));
             }
 
@@ -51,8 +57,12 @@ namespace Gui
 
         private:
             std::vector<std::unique_ptr<Gui::Widget>> widgets;
+
             std::vector<Gui::Selectable*> selectables;
             size_t selected_widget_index =0;
+
+            std::array<Gui::PushButton*, 4> push_buttons = 
+                { nullptr, nullptr, nullptr, nullptr };
     };
 
     struct Button {

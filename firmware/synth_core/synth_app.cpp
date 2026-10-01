@@ -1,4 +1,5 @@
 #include "synth_c_api.h"
+#include "gui/main_menu.h"
 
 extern "C" {
 #include "GUI_Paint.h"
@@ -129,10 +130,12 @@ private:
 };
 
 MainPage *main_page = nullptr;
+MainMenu menu;
 
 void draw_main_page(UWORD *screen) {
     Paint_Clear(BLACK);
-    main_page->draw();
+    //main_page->draw();
+    menu.draw();
     LCD_1IN44_Display(screen);
 }
 
@@ -155,6 +158,9 @@ extern "C" void synth_app_start(UWORD *screen) {
     if (main_page == nullptr) {
         main_page = new MainPage();
     }
+    // if (menu == nullptr) {
+    //     menu = new MainMenu();
+    // }
 
     draw_main_page(screen);
 }
@@ -183,14 +189,13 @@ KeyId map_key(hw_key_id_t key)
 }
 
 extern "C" void synth_app_loop(UWORD *screen) {
-    if (screen == nullptr || main_page == nullptr) {
+    if (screen == nullptr || main_page == nullptr /*|| menu == nullptr*/) {
         return;
     }
 
     hw_event_t event;
     bool changed = false;
     while (get_event(&event)) {
-
         Gui::InputEvent input_event;
         switch (event.type) {
             case HW_EVENT_ROTATION:
@@ -206,7 +211,8 @@ extern "C" void synth_app_loop(UWORD *screen) {
 
                 break;
         }
-        main_page->handle_event(input_event);
+        //main_page->handle_event(input_event);
+        menu.handle_event(input_event);
         changed = true;
     }
 

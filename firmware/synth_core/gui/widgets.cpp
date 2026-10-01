@@ -49,7 +49,7 @@ void NavItem::draw()
         BG_PANEL);
 }
 
-ReactionEvent NavItem::on_push()
+ReactionEvent NavItem::on_rot_push()
 {
     return ReactionEvent::from_target_page(1);
 }
@@ -83,6 +83,8 @@ TestButton::TestButton(size_t index, const std::string& text)
 : text(text)
 {
     static const UWORD BUTTON_WIDTH = LCD_1IN44.WIDTH / 4;
+
+    this->button_index = index;
 
     this->x = index * BUTTON_WIDTH;
     this->y = LCD_1IN44.HEIGHT - BUTTON_WIDTH;
@@ -131,7 +133,7 @@ void TestButton::draw()
                         &Font12, text_color, text_background_color);
 }
 
-ReactionEvent TestButton::on_push()
+ReactionEvent TestButton::on_rot_push()
 {
     if (active)
     {
@@ -143,10 +145,15 @@ ReactionEvent TestButton::on_push()
     }
 }
 
+void TestButton::on_push()
+{
+    printf("You just pushed that button\n");
+}
+
 void TestButton::on_rotate(int8_t increment)
 {
-    index = (index + increment + 5) % 5;
-    text = std::to_string(index);
+    my_number = (my_number + increment + 5) % 5;
+    text = std::to_string(my_number);
 }
 
 }

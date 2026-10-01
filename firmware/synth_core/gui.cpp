@@ -44,7 +44,7 @@ namespace Gui
             case Gui::InputEvent::Type::Key:
                 if ((event.key_id == KeyId::ROT_SWITCH) && event.pressed)
                 {
-                    auto event = selectables[selected_widget_index]->on_push();
+                    auto event = selectables[selected_widget_index]->on_rot_push();
                     if (event.type == ReactionEvent::Type::Activate)
                     {
                         selectables[selected_widget_index]->active = true;
@@ -52,6 +52,16 @@ namespace Gui
                     else if (event.type == ReactionEvent::Type::Deactivate)
                     {
                         selectables[selected_widget_index]->active = false;
+                    }
+                }
+                else if (event.pressed)
+                {
+                    // TODO: add conversion function for this
+                    size_t index = static_cast<size_t>(event.key_id) -
+                            static_cast<size_t>(KeyId::KEY0);
+                    if (push_buttons[index]!=nullptr)
+                    {
+                        push_buttons[index]->on_push();
                     }
                 }
                 handle_key_press(event.key_id, event.pressed);

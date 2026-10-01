@@ -15,8 +15,6 @@ public:
     UWORD width;
     UWORD height;
 
-    bool pressed = false;
-
     virtual void draw() =0;
 };
 
@@ -27,8 +25,18 @@ struct Selectable {
     bool selected = false;
     bool active = false;
 
-    virtual ReactionEvent on_push() =0;
+    // Function that is called when the push-button of the rotary dial is
+    // pressed
+    virtual ReactionEvent on_rot_push() =0;
     virtual void on_rotate(int8_t increment) =0;
+};
+
+struct PushButton {
+    size_t button_index = 0;
+    bool pressed = false;
+
+    // Function that is called when the assigned non-rotary button is pressed
+    virtual void on_push() =0;
 };
 
 class NavItem : public Widget, public Selectable {
@@ -38,19 +46,20 @@ public:
 
     std::string text;
 
-    ReactionEvent on_push() override;
+    ReactionEvent on_rot_push() override;
     void on_rotate(int8_t increment) override;
 };
 
-class TestButton : public Widget, public Selectable {
+class TestButton : public Widget, public Selectable, public PushButton {
 public:
     TestButton(size_t index, const std::string& text);
     void draw() override;
 
     std::string text;
-    size_t index = 0;
+    size_t my_number;
 
-    ReactionEvent on_push() override;
+    ReactionEvent on_rot_push() override;
+    void on_push() override;
     void on_rotate(int8_t increment) override;
 };
 
